@@ -11,7 +11,6 @@ async function scrollToElement(page, selector) {
       });
     }, element);
   } else {
-    // console.error(`Element not found: ${selector}`);
   }
 }
 
@@ -77,20 +76,15 @@ async function getMarketsAndOdds() {
       'li.ng-scope:nth-child(50) > span:nth-child(1) > label:nth-child(4)',
     ];
 
-    //console.log('Scrolling to checkboxes...');
     for (const selector of checkboxSelectors) {
       await scrollToElement(page, selector);
       const checkboxElement = await page.$(selector);
       if (checkboxElement) {
-        //  console.log(`Clicking on checkbox ${selector}...`);
         await checkboxElement.click({ delay: 300 });
       } else {
-        // console.log(`Checkbox element not found: ${selector}`);
       }
     }
-    // console.log('Checkboxes clicked');
 
-    // console.log('Scrolling to bottom of page...');
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         let totalHeight = 0;
@@ -120,12 +114,45 @@ async function getMarketsAndOdds() {
       });
     });
 
-    console.log('Markets and Odds:', marketsAndOdds);
+    //console.log('Markets and Odds:', marketsAndOdds);
+
+    const input = marketsAndOdds.join('\n');
+    const soccer_tournaments = input.split('\n');
+
+    let tournament = null;
+    let country_leagues = [];
+    let country_soccer = [];
+
+    for (let i = 0; i < soccer_tournaments.length; i++) {
+      const line = soccer_tournaments[i];
+
+      if (line.startsWith('+')) {
+        tournament = {
+          //country_soccer: country_soccer[country_soccer.length - 1],
+          country_league: country_leagues[country_leagues.length - 1],
+          teams: soccer_tournaments[i - 8],
+          date: soccer_tournaments[i - 10],
+          time: soccer_tournaments[i - 9],
+          odd1: soccer_tournaments[i - 6],
+          oddx: soccer_tournaments[i - 5],
+          odd2: soccer_tournaments[i - 4],
+          odd1x: soccer_tournaments[i - 3],
+          oddx2: soccer_tournaments[i - 2],
+          odd12: soccer_tournaments[i - 1],
+          others: line.slice(0).trim(),
+        };
+        console.log(tournament);
+      } else if (line.trim() === '1') {
+        country_leagues.push(soccer_tournaments[i - 1].trim());
+      } else if (line.startsWith('SOCCER')) {
+        country_soccer.push(line.substring('SOCCER-'.length).trim());
+      }
+    }
   } catch (error) {
     console.error(error);
   } finally {
     await browser.close();
   }
 }
-
 getMarketsAndOdds();
+
